@@ -39,7 +39,10 @@
       "output": "dist"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        { "target": "dmg", "arch": ["arm64"] },
+        { "target": "zip", "arch": ["arm64"] }
+      ],
       "category": "public.app-category.productivity"
     },
     "win": {
