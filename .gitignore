@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+demo/*.xlsx
+demo/report.*
+demo/*.html
+.vscode/
+.idea/
+*.tmp

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Excel Diff Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>📊 Excel Diff Tool</h1>
+    <div class="actions">
+      <label class="chk"><input type="checkbox" id="opt3files"> So sánh 3 file</label>
+      <label class="chk"><input type="checkbox" id="optFormat"> So sánh định dạng</label>
+      <label class="chk"><input type="checkbox" id="optImages" checked> So sánh ảnh</label>
+      <button id="btnCompare" class="primary">▶ So sánh</button>
+      <button id="btnReset">⟲ Reset</button>
+      <button id="btnExport" disabled>💾 Xuất báo cáo</button>
+    </div>
+  </header>
+
+  <section class="dropzones" id="dropzones">
+    <!-- inserted by JS -->
+  </section>
+
+  <section class="progress" id="progressBox" hidden>
+    <div class="bar"><div class="fill" id="progressFill"></div></div>
+    <span id="progressMsg">…</span>
+  </section>
+
+  <main class="workspace">
+    <aside class="sidebar" id="sidebar">
+      <div class="hint">Chọn 2-3 file Excel rồi nhấn <b>So sánh</b>.</div>
+    </aside>
+    <section class="main">
+      <nav class="tabs">
+        <button class="tab active" data-tab="overview">Tổng quan</button>
+        <button class="tab" data-tab="data">Dữ liệu</button>
+        <button class="tab" data-tab="images">Hình ảnh</button>
+      </nav>
+      <div class="tab-panel active" data-panel="overview" id="panelOverview">
+        <div class="placeholder">Chưa có kết quả so sánh.</div>
+      </div>
+      <div class="tab-panel" data-panel="data" id="panelData">
+        <div class="toolbar">
+          <input type="search" id="filterData" placeholder="Lọc theo cell / status / giá trị...">
+        </div>
+        <div class="scroll" id="dataTableWrap"></div>
+      </div>
+      <div class="tab-panel" data-panel="images" id="panelImages">
+        <div class="scroll" id="imagesWrap"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

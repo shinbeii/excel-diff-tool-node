@@ -1,0 +1,62 @@
+{
+  "name": "excel-diff-tool",
+  "version": "1.0.0",
+  "description": "Desktop tool so sánh 2-3 file Excel có ảnh nhúng (Node.js + Electron)",
+  "main": "electron/main.js",
+  "author": "shinbeii",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "cli": "node src/cli.js",
+    "demo": "node scripts/makeDemoFiles.js",
+    "test": "vitest run",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8",
+    "vitest": "^2.1.4"
+  },
+  "build": {
+    "appId": "com.shinbeii.exceldifftool",
+    "productName": "ExcelDiffTool",
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
