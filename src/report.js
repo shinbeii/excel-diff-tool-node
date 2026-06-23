@@ -18,6 +18,10 @@ const FILL = {
   similar:        'FFFFEB9C',
   resized:        'FFD9E1F2',
   moved:          'FFBDD7EE',
+  // Shape statuses
+  text_changed:   'FFFFEB9C',
+  shape_changed:  'FFFCE4D6',
+  style_changed:  'FFE7E6E6',
 };
 
 function _safeSheetName(name) {
@@ -44,8 +48,10 @@ function _escapeHtml(s) {
  * @param {object} diff - kết quả từ diffWorkbooks
  * @param {object} imageResults - kết quả từ diffImages
  * @param {string} outPath
+ * @param {object} [extra] - { shapeResults }
  */
-async function exportExcelReport(diff, imageResults, outPath) {
+async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
+  const shapeResults = extra.shapeResults || null;
   const wb = new ExcelJS.Workbook();
   wb.creator = 'ExcelDiffTool';
   wb.created = new Date();
@@ -145,6 +151,38 @@ async function exportExcelReport(diff, imageResults, outPath) {
     ims.views = [{ state: 'frozen', ySplit: 1 }];
   }
 
+  // ----- Shapes sheet (吹き出し / callout) -----
+  if (shapeResults && Object.keys(shapeResults).length > 0) {
+    const shs = wb.addWorksheet('Shapes');
+    const head = ['Sheet', 'Status', 'Score', 'Type', 'Anchors', 'Sizes (px)', 'Fill', 'Text (file1)', 'Text (file2)', 'Text (file3)'];
+    const nFiles = diff.files.length;
+    const headers = head.slice(0, 7 + nFiles);
+    headers.forEach((h, i) => {
+      const c = shs.getCell(1, i + 1); c.value = h; c.font = { bold: true };
+    });
+    let row = 2;
+    for (const [sname, res] of Object.entries(shapeResults)) {
+      for (const e of res.entries) {
+        shs.getCell(row, 1).value = sname;
+        shs.getCell(row, 2).value = e.status;
+        shs.getCell(row, 3).value = `${e.score || 0}%`;
+        shs.getCell(row, 4).value = e.items.map(it => it ? it.prstGeom : '-').join(' / ');
+        shs.getCell(row, 5).value = e.items.map(it => it ? it.anchor : '-').join(' / ');
+        shs.getCell(row, 6).value = e.items.map(it => it ? `${it.widthPx}x${it.heightPx}` : '-').join(' / ');
+        shs.getCell(row, 7).value = e.items.map(it => it ? (it.fill || '-') : '-').join(' / ');
+        for (let k = 0; k < nFiles; k++) {
+          shs.getCell(row, 8 + k).value = e.items[k] ? (e.items[k].text || '') : '';
+        }
+        const fill = _fillFor(e.status);
+        for (let col = 1; col <= 7 + nFiles; col++) shs.getCell(row, col).fill = fill;
+        row++;
+      }
+    }
+    const widths = [14, 14, 8, 22, 14, 14, 12, 26, 26, 26];
+    widths.slice(0, 7 + nFiles).forEach((w, i) => { shs.getColumn(i + 1).width = w; });
+    shs.views = [{ state: 'frozen', ySplit: 1 }];
+  }
+
   await wb.xlsx.writeFile(outPath);
   return outPath;
 }
@@ -152,7 +190,8 @@ async function exportExcelReport(diff, imageResults, outPath) {
 /**
  * Xuất HTML report đơn giản.
  */
-async function exportHtmlReport(diff, imageResults, outPath) {
+async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
+  const shapeResults = extra.shapeResults || null;
   const parts = [
     '<!doctype html><html><head><meta charset="utf-8">',
     '<title>Excel Diff Report</title>',
@@ -163,6 +202,8 @@ async function exportHtmlReport(diff, imageResults, outPath) {
     '.modified{background:#FFEB9C}.moved{background:#BDD7EE}',
     '.near_identical{background:#E2EFDA}.similar{background:#FFEB9C}',
     '.resized{background:#D9E1F2}',
+    '.text_changed{background:#FFEB9C}.shape_changed{background:#FCE4D6}',
+    '.style_changed{background:#E7E6E6}.identical{background:#FFFFFF}',
     'h1{margin-top:0}h2{border-bottom:2px solid #333;padding-bottom:4px}',
     'code{background:#f3f3f3;padding:1px 4px;border-radius:3px}</style>',
     '</head><body>', '<h1>Excel Diff Report</h1>',
@@ -208,6 +249,28 @@ async function exportHtmlReport(diff, imageResults, outPath) {
           `<td>${_escapeHtml(e.items.map(it => it ? it.anchor : '-').join(' / '))}</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? `${it.width}x${it.height}` : '-').join(' / '))}</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? it.phashHex : '-').join(' / '))}</td>` +
+          '</tr>'
+        );
+      }
+    }
+    parts.push('</table>');
+  }
+
+  if (shapeResults && Object.keys(shapeResults).length > 0) {
+    parts.push('<h2>Shapes (吹き出し / callout)</h2><table>',
+      '<tr><th>Sheet</th><th>Status</th><th>Score</th><th>Type</th><th>Anchors</th><th>Sizes (px)</th><th>Fill</th><th>Text</th></tr>');
+    for (const [sname, res] of Object.entries(shapeResults)) {
+      for (const e of res.entries) {
+        parts.push(
+          `<tr class="${e.status}">` +
+          `<td>${_escapeHtml(sname)}</td>` +
+          `<td>${e.status}</td>` +
+          `<td>${e.score || 0}%</td>` +
+          `<td>${_escapeHtml(e.items.map(it => it ? it.prstGeom : '-').join(' / '))}</td>` +
+          `<td>${_escapeHtml(e.items.map(it => it ? it.anchor : '-').join(' / '))}</td>` +
+          `<td>${_escapeHtml(e.items.map(it => it ? `${it.widthPx}x${it.heightPx}` : '-').join(' / '))}</td>` +
+          `<td>${_escapeHtml(e.items.map(it => it ? (it.fill || '-') : '-').join(' / '))}</td>` +
+          `<td>${_escapeHtml(e.items.map(it => it ? (it.text || '') : '').join(' → '))}</td>` +
           '</tr>'
         );
       }

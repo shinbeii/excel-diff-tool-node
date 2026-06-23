@@ -12,6 +12,7 @@
       <label class="chk"><input type="checkbox" id="opt3files"> So sánh 3 file</label>
       <label class="chk"><input type="checkbox" id="optFormat"> So sánh định dạng</label>
       <label class="chk"><input type="checkbox" id="optImages" checked> So sánh ảnh</label>
+      <label class="chk"><input type="checkbox" id="optShapes" checked> So sánh 吹き出し</label>
       <button id="btnCompare" class="primary">▶ So sánh</button>
       <button id="btnReset">⟲ Reset</button>
       <button id="btnExport" disabled>💾 Xuất báo cáo</button>
@@ -36,6 +37,7 @@
         <button class="tab active" data-tab="overview">Tổng quan</button>
         <button class="tab" data-tab="data">Dữ liệu</button>
         <button class="tab" data-tab="images">Hình ảnh</button>
+        <button class="tab" data-tab="shapes">吹き出し / Shapes</button>
       </nav>
       <div class="tab-panel active" data-panel="overview" id="panelOverview">
         <div class="placeholder">Chưa có kết quả so sánh.</div>
@@ -48,6 +50,9 @@
       </div>
       <div class="tab-panel" data-panel="images" id="panelImages">
         <div class="scroll" id="imagesWrap"></div>
+      </div>
+      <div class="tab-panel" data-panel="shapes" id="panelShapes">
+        <div class="scroll" id="shapesWrap"></div>
       </div>
     </section>
   </main>

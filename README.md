@@ -5,9 +5,10 @@ Desktop tool nhẹ, mở nhanh để **so sánh 2-3 file Excel (.xlsx/.xlsm)** c
 ## ✨ Tính năng
 - So sánh **giá trị / công thức / định dạng** từng cell, mọi sheet (match theo tên).
 - So sánh **ảnh nhúng** với multi-hash ensemble (pHash 16×16 DCT + dHash 16×16 + aHash 8×8) + greedy global matching → 7 trạng thái: `identical / near_identical / similar / resized / moved / added / removed` + score 0-100%.
-- GUI Electron drag-drop, 3 tab: **Tổng quan / Dữ liệu / Hình ảnh**.
-- Xuất báo cáo **Excel** (tô màu diff, thumbnail ảnh) và **HTML**.
-- CLI cho automation/CI.
+- So sánh **shapes / 吹き出し (callout / speech bubble)** — parse trực tiếp `xl/drawings/*.xml` (vì exceljs không hỗ trợ shapes), trích xuất prstGeom + text + anchor + size + fill, match bằng composite distance (text Levenshtein 50% + geom 20% + position 20% + fill 10%) → status: `identical / text_changed / shape_changed / moved / resized / style_changed / added / removed`.
+- GUI Electron drag-drop, 4 tab: **Tổng quan / Dữ liệu / Hình ảnh / 吹き出し**.
+- Xuất báo cáo **Excel** (tô màu diff, thumbnail ảnh, sheet Shapes) và **HTML**.
+- CLI cho automation/CI: `--no-images`, `--no-shapes`, `--format`.
 - Đóng gói thành **.app + .dmg** (macOS x64 + arm64), **.exe NSIS installer + portable** (Windows), **AppImage + .deb** (Linux).
 
 ## 🚀 Cài & chạy dev
@@ -40,11 +41,13 @@ excel-diff-tool-node/
 │   └── app.js            # logic UI (drag-drop, tabs, render)
 ├── src/
 │   ├── excelDiff.js      # diff cell/sheet/formula/format
-│   ├── imageDiff.js      # multi-hash + greedy global match
+│   ├── imageDiff.js      # multi-hash + greedy global match (ảnh nhúng)
+│   ├── shapeDiff.js      # parse drawing XML + diff 吹き出し/callout
 │   ├── report.js         # xuất Excel + HTML
 │   └── cli.js            # CLI entry
 ├── scripts/
-│   └── makeDemoFiles.js  # tạo file demo có ảnh nhúng
+│   ├── makeDemoFiles.js  # tạo file demo có ảnh nhúng
+│   └── makeDemoShapes.js # tạo file demo có 吹き出し (callout shapes)
 ├── tests/
 │   └── smoke.test.mjs    # vitest (ESM)
 ├── assets/               # icon, etc.
@@ -57,6 +60,22 @@ Usage:
   node src/cli.js <file_a.xlsx> <file_b.xlsx> [file_c.xlsx] \
         [--out report.xlsx] [--html report.html] [--no-images] [--format]
 ```
+
+## 💬 Shape diff (吹き出し / Callout)
+exceljs **không hỗ trợ shapes**, nên `src/shapeDiff.js` parse trực tiếp XML drawing trong xlsx (xlsx = ZIP):
+1. Mở zip qua `jszip`, đọc `xl/workbook.xml` + rels → resolve tên sheet → drawing path.
+2. Parse `xl/drawings/drawing*.xml` qua `sax` streaming, trích xuất từng `<xdr:sp>`:
+   - `prstGeom` (wedgeRectCallout, wedgeRoundRectCallout, cloudCallout, borderCallout1..3, ...)
+   - text (gộp tất cả `<a:t>`)
+   - anchor `from/to` (col/row) + offset EMU → pixel
+   - fill color (`<a:solidFill><a:srgbClr>`) — bỏ qua màu trong `<a:ln>` (border).
+3. Match bằng composite distance:
+   - 50% text Levenshtein normalized
+   - 20% prstGeom (khác = 1)
+   - 20% position (|Δrow|+|Δcol| / 30, clamp 0..1)
+   - 10% fill
+4. Greedy global matching → phân loại 8 status:
+   `identical / text_changed / shape_changed / moved / resized / style_changed / added / removed` + score 0-100%.
 
 ## 🔧 Stack
 - **Node.js 18+** (đã test trên 22.18)

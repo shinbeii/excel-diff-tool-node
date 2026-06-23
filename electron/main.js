@@ -9,6 +9,7 @@ const fs = require('fs');
 
 const { diffWorkbooks } = require('../src/excelDiff');
 const { diffImages }   = require('../src/imageDiff');
+const { diffShapes }   = require('../src/shapeDiff');
 const { exportExcelReport, exportHtmlReport } = require('../src/report');
 
 let mainWindow = null;
@@ -63,7 +64,7 @@ ipcMain.handle('dialog:saveReport', async (_e, defName) => {
 });
 
 ipcMain.handle('compare:run', async (event, args) => {
-  const { files, compareFormat, compareImages } = args;
+  const { files, compareFormat, compareImages, compareShapes } = args;
   if (!files || files.length < 2) throw new Error('Cần ít nhất 2 file.');
   for (const f of files) {
     if (!fs.existsSync(f)) throw new Error(`File không tồn tại: ${f}`);
@@ -76,12 +77,17 @@ ipcMain.handle('compare:run', async (event, args) => {
   send('progress', { pct: 0, msg: 'Bắt đầu so sánh nội dung...' });
   const diff = await diffWorkbooks(files, {
     compareFormat,
-    progressCb: (pct, msg) => send('progress', { pct: Math.floor(pct * 0.6), msg }),
+    progressCb: (pct, msg) => send('progress', { pct: Math.floor(pct * 0.5), msg }),
   });
   let imageResults = {};
   if (compareImages) {
-    send('progress', { pct: 65, msg: 'Trích xuất + hash ảnh nhúng...' });
+    send('progress', { pct: 55, msg: 'Trích xuất + hash ảnh nhúng...' });
     imageResults = await diffImages(files);
+  }
+  let shapeResults = {};
+  if (compareShapes) {
+    send('progress', { pct: 80, msg: 'Parse drawing XML + diff shapes (吹き出し)...' });
+    shapeResults = await diffShapes(files);
   }
   send('progress', { pct: 100, msg: 'Hoàn tất.' });
 
@@ -96,24 +102,25 @@ ipcMain.handle('compare:run', async (event, args) => {
         items: e.items.map(it => it ? {
           fileIdx: it.fileIdx, sheet: it.sheet, anchor: it.anchor,
           width: it.width, height: it.height, phashHex: it.phashHex,
-          // gửi thumbnail base64 cho UI.
           thumb: it.buffer ? `data:image/png;base64,${it.buffer.toString('base64')}` : null,
         } : null),
       })),
     };
   }
-  return { diff, imageResults: slimImages };
+  // Shapes chỉ là dữ liệu text + meta, không cần strip.
+  return { diff, imageResults: slimImages, shapeResults };
 });
 
 ipcMain.handle('report:export', async (_e, args) => {
-  const { diff, imageResults, outPath, alsoHtml } = args;
+  const { diff, outPath, alsoHtml } = args;
   // imageResults từ renderer chưa có Buffer; load lại từ file để embed thumbnail.
   const fullImages = await diffImages(diff.files);
-  await exportExcelReport(diff, fullImages, outPath);
+  const fullShapes = await diffShapes(diff.files);
+  await exportExcelReport(diff, fullImages, outPath, { shapeResults: fullShapes });
   let htmlPath = null;
   if (alsoHtml) {
     htmlPath = outPath.replace(/\.xlsx?$/i, '.html');
-    await exportHtmlReport(diff, fullImages, htmlPath);
+    await exportHtmlReport(diff, fullImages, htmlPath, { shapeResults: fullShapes });
   }
   return { outPath, htmlPath };
 });

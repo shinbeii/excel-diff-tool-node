@@ -14,17 +14,23 @@ const require = createRequire(import.meta.url);
 
 const { diffWorkbooks } = require('../src/excelDiff');
 const { diffImages }    = require('../src/imageDiff');
+const { diffShapes }    = require('../src/shapeDiff');
 const { exportExcelReport, exportHtmlReport } = require('../src/report');
 
 const ROOT = path.resolve(__dirname, '..');
 const DEMO = path.join(ROOT, 'demo');
 const FA = path.join(DEMO, 'file_a.xlsx');
 const FB = path.join(DEMO, 'file_b.xlsx');
+const SA = path.join(DEMO, 'shapes_a.xlsx');
+const SB = path.join(DEMO, 'shapes_b.xlsx');
 
 describe('excel-diff-tool smoke', () => {
   beforeAll(() => {
     if (!fs.existsSync(FA) || !fs.existsSync(FB)) {
       execSync('node scripts/makeDemoFiles.js', { cwd: ROOT, stdio: 'inherit' });
+    }
+    if (!fs.existsSync(SA) || !fs.existsSync(SB)) {
+      execSync('node scripts/makeDemoShapes.js', { cwd: ROOT, stdio: 'inherit' });
     }
   }, 60000);
 
@@ -53,6 +59,39 @@ describe('excel-diff-tool smoke', () => {
       expect(e.score).toBeGreaterThanOrEqual(0);
       expect(e.score).toBeLessThanOrEqual(100);
     }
+  }, 60000);
+
+  it('diff shapes (吹き出し): tìm thấy text_changed + moved + added + removed', async () => {
+    const r = await diffShapes([SA, SB]);
+    const notes = r.Notes;
+    expect(notes).toBeTruthy();
+    expect(notes.entries.length).toBeGreaterThanOrEqual(4);
+    const statuses = notes.entries.map(e => e.status);
+    expect(statuses).toContain('text_changed');
+    expect(statuses).toContain('moved');
+    expect(statuses).toContain('added');
+    expect(statuses).toContain('removed');
+    expect(notes.summary.callouts).toBeGreaterThan(0);
+    // Verify shape có đầy đủ metadata
+    const sh = notes.entries.find(e => e.items.some(it => it && it.prstGeom)).items.find(it => it && it.prstGeom);
+    expect(sh.prstGeom).toBeTruthy();
+    expect(sh.fill).toMatch(/^#[0-9A-F]{6}$/);
+    expect(sh.text).toBeTruthy();
+    expect(sh.isCallout).toBe(true);
+  }, 60000);
+
+  it('xuất báo cáo Excel + HTML có sheet Shapes', async () => {
+    const diff = await diffWorkbooks([SA, SB]);
+    const shapes = await diffShapes([SA, SB]);
+    const xlsx = path.join(DEMO, 'shapes_report.xlsx');
+    const html = path.join(DEMO, 'shapes_report.html');
+    await exportExcelReport(diff, {}, xlsx, { shapeResults: shapes });
+    await exportHtmlReport(diff, {}, html, { shapeResults: shapes });
+    expect(fs.existsSync(xlsx)).toBe(true);
+    expect(fs.existsSync(html)).toBe(true);
+    const htmlContent = fs.readFileSync(html, 'utf-8');
+    expect(htmlContent).toContain('吹き出し');
+    expect(htmlContent).toContain('text_changed');
   }, 60000);
 
   it('xuất báo cáo Excel + HTML', async () => {

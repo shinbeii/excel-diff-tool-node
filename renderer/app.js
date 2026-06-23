@@ -9,6 +9,7 @@ const state = {
   use3: false,
   diff: null,
   imageResults: null,
+  shapeResults: null,
   selectedSheet: null,
 };
 
@@ -59,7 +60,7 @@ $('#opt3files').addEventListener('change', (e) => {
 
 $('#btnReset').addEventListener('click', () => {
   state.files = [null, null, null];
-  state.diff = null; state.imageResults = null; state.selectedSheet = null;
+  state.diff = null; state.imageResults = null; state.shapeResults = null; state.selectedSheet = null;
   renderDropzones(); renderAll();
   $('#btnExport').disabled = true;
 });
@@ -83,9 +84,11 @@ $('#btnCompare').addEventListener('click', async () => {
       files,
       compareFormat: $('#optFormat').checked,
       compareImages: $('#optImages').checked,
+      compareShapes: $('#optShapes').checked,
     });
     state.diff = result.diff;
     state.imageResults = result.imageResults;
+    state.shapeResults = result.shapeResults;
     state.selectedSheet = state.diff.sheets[0]?.name || null;
     renderAll();
     $('#btnExport').disabled = false;
@@ -124,6 +127,7 @@ function renderAll() {
   renderOverview();
   renderDataTable();
   renderImages();
+  renderShapes();
 }
 
 function renderSidebar() {
@@ -186,6 +190,20 @@ function renderOverview() {
       </div>`;
     }
   }
+  if (state.shapeResults) {
+    for (const [s, r] of Object.entries(state.shapeResults)) {
+      html += `<div class="summary-card">
+        <h3>💬 ${s} <small style="color:#888;font-weight:400">(吹き出し: ${r.summary.callouts || 0})</small></h3>
+        <div class="row"><span>identical</span><span class="v">${r.summary.identical}</span></div>
+        <div class="row kv-modified"><span>text_changed</span><span class="v">${r.summary.text_changed}</span></div>
+        <div class="row kv-moved"><span>moved</span><span class="v">${r.summary.moved}</span></div>
+        <div class="row kv-resized"><span>resized / shape_changed</span><span class="v">${r.summary.resized + r.summary.shape_changed}</span></div>
+        <div class="row"><span>style_changed</span><span class="v">${r.summary.style_changed}</span></div>
+        <div class="row kv-added"><span>added</span><span class="v">${r.summary.added}</span></div>
+        <div class="row kv-removed"><span>removed</span><span class="v">${r.summary.removed}</span></div>
+      </div>`;
+    }
+  }
   html += '</div>';
   root.innerHTML = html;
 }
@@ -239,10 +257,53 @@ function renderImages() {
   root.innerHTML = html || '<div class="placeholder">Không có ảnh khác biệt.</div>';
 }
 
+function renderShapes() {
+  const root = $('#shapesWrap');
+  if (!state.shapeResults || Object.keys(state.shapeResults).length === 0) {
+    root.innerHTML = '<div class="placeholder">Không có shapes (吹き出し / callout) trong file.</div>'; return;
+  }
+  let html = '';
+  for (const [s, r] of Object.entries(state.shapeResults)) {
+    if (!r.entries.length) continue;
+    html += `<h2 style="font-size:14px;color:#fff;margin:8px 4px">📄 Sheet: ${s} <small style="color:#888;font-weight:400">— callouts: ${r.summary.callouts || 0}</small></h2>`;
+    html += '<table class="diff"><thead><tr><th>Status</th><th>Score</th><th>Type</th><th>Anchor</th><th>Size (px)</th><th>Fill</th><th>Text</th></tr></thead><tbody>';
+    for (const e of r.entries) {
+      const cls = e.status;
+      const types = e.items.map(it => it ? it.prstGeom : '-').join(' / ');
+      const anchors = e.items.map(it => it ? it.anchor : '-').join(' / ');
+      const sizes = e.items.map(it => it ? `${it.widthPx}×${it.heightPx}` : '-').join(' / ');
+      const fills = e.items.map(it => it ? renderFillSwatch(it.fill) : '-').join(' ');
+      const texts = e.items.map(it => it ? `<div>${esc(it.text || '')}</div>` : '<div style="color:#666">—</div>').join('<div style="color:#888;text-align:center">↓</div>');
+      html += `<tr class="${cls}"><td><span class="badge b-${cls}">${cls}</span></td><td class="score">${e.score}%</td><td>${esc(types)}</td><td>${esc(anchors)}</td><td>${esc(sizes)}</td><td>${fills}</td><td style="white-space:normal">${texts}</td></tr>`;
+    }
+    html += '</tbody></table>';
+  }
+  root.innerHTML = html || '<div class="placeholder">Không có shapes khác biệt.</div>';
+}
+
+function renderFillSwatch(fill) {
+  if (!fill) return '<span style="color:#666">-</span>';
+  const safe = /^#[0-9A-Fa-f]{6}$/.test(fill) ? fill : '#888888';
+  return `<span title="${esc(fill)}" style="display:inline-block;width:18px;height:14px;background:${safe};border:1px solid #555;vertical-align:middle"></span> <small>${esc(fill)}</small>`;
+}
+
 function esc(v) {
   if (v == null) return '';
   return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// Bổ sung CSS class cho các status mới (text_changed/shape_changed/style_changed/identical) tránh trắng/transparent.
+const extraStyle = document.createElement('style');
+extraStyle.textContent = `
+  table.diff tr.text_changed td  { background: #4d4419; }
+  table.diff tr.shape_changed td { background: #4d3a19; }
+  table.diff tr.style_changed td { background: #3a3a3a; }
+  table.diff tr.identical td     { background: transparent; }
+  .b-text_changed  { background: #ffd60a; color: #222; }
+  .b-shape_changed { background: #ff9500; color: white; }
+  .b-style_changed { background: #8e8e93; color: white; }
+`;
+document.head.appendChild(extraStyle);
 
 renderDropzones();
 renderAll();
