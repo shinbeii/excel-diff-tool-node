@@ -1,5 +1,5 @@
 /**
- * scripts/makeDemoShapes.js — Sinh demo có 吹き出し (callout shapes).
+ * scripts/makeDemoShapes.js — Sinh demo có khung chú thích (callout shapes).
  *
  * exceljs không hỗ trợ shapes, nên ta:
  *   1. Dùng exceljs tạo workbook trắng với sheet 'Notes'.
@@ -69,7 +69,7 @@ async function buildShapesFile(filePath, shapes) {
   // 1. base workbook bằng exceljs
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Notes');
-  ws.getCell('A1').value = 'Ghi chú với 吹き出し (callout)';
+  ws.getCell('A1').value = 'Ghi chú với khung chú thích (callout)';
   ws.getCell('A1').font = { bold: true, size: 13 };
   ws.getCell('A2').value = 'Mỗi shape phía dưới là một speech bubble.';
   for (let r = 1; r <= 30; r++) ws.getRow(r).height = 22;

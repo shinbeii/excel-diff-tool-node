@@ -151,7 +151,7 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
     ims.views = [{ state: 'frozen', ySplit: 1 }];
   }
 
-  // ----- Shapes sheet (吹き出し / callout) -----
+  // ----- Sheet "Khung chú thích" (callout) -----
   if (shapeResults && Object.keys(shapeResults).length > 0) {
     const shs = wb.addWorksheet('Shapes');
     const head = ['Sheet', 'Status', 'Score', 'Type', 'Anchors', 'Sizes (px)', 'Fill', 'Text (file1)', 'Text (file2)', 'Text (file3)'];
@@ -257,7 +257,7 @@ async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
   }
 
   if (shapeResults && Object.keys(shapeResults).length > 0) {
-    parts.push('<h2>Shapes (吹き出し / callout)</h2><table>',
+    parts.push('<h2>Khung chú thích (callout)</h2><table>',
       '<tr><th>Sheet</th><th>Status</th><th>Score</th><th>Type</th><th>Anchors</th><th>Sizes (px)</th><th>Fill</th><th>Text</th></tr>');
     for (const [sname, res] of Object.entries(shapeResults)) {
       for (const e of res.entries) {

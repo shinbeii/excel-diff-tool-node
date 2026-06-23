@@ -193,7 +193,7 @@ function renderOverview() {
   if (state.shapeResults) {
     for (const [s, r] of Object.entries(state.shapeResults)) {
       html += `<div class="summary-card">
-        <h3>💬 ${s} <small style="color:#888;font-weight:400">(吹き出し: ${r.summary.callouts || 0})</small></h3>
+        <h3>💬 ${s} <small style="color:#888;font-weight:400">(khung chú thích: ${r.summary.callouts || 0})</small></h3>
         <div class="row"><span>identical</span><span class="v">${r.summary.identical}</span></div>
         <div class="row kv-modified"><span>text_changed</span><span class="v">${r.summary.text_changed}</span></div>
         <div class="row kv-moved"><span>moved</span><span class="v">${r.summary.moved}</span></div>
@@ -260,7 +260,7 @@ function renderImages() {
 function renderShapes() {
   const root = $('#shapesWrap');
   if (!state.shapeResults || Object.keys(state.shapeResults).length === 0) {
-    root.innerHTML = '<div class="placeholder">Không có shapes (吹き出し / callout) trong file.</div>'; return;
+    root.innerHTML = '<div class="placeholder">Không có khung chú thích (callout) trong file.</div>'; return;
   }
   let html = '';
   for (const [s, r] of Object.entries(state.shapeResults)) {

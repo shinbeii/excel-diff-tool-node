@@ -5,8 +5,8 @@ Desktop tool nhẹ, mở nhanh để **so sánh 2-3 file Excel (.xlsx/.xlsm)** c
 ## ✨ Tính năng
 - So sánh **giá trị / công thức / định dạng** từng cell, mọi sheet (match theo tên).
 - So sánh **ảnh nhúng** với multi-hash ensemble (pHash 16×16 DCT + dHash 16×16 + aHash 8×8) + greedy global matching → 7 trạng thái: `identical / near_identical / similar / resized / moved / added / removed` + score 0-100%.
-- So sánh **shapes / 吹き出し (callout / speech bubble)** — parse trực tiếp `xl/drawings/*.xml` (vì exceljs không hỗ trợ shapes), trích xuất prstGeom + text + anchor + size + fill, match bằng composite distance (text Levenshtein 50% + geom 20% + position 20% + fill 10%) → status: `identical / text_changed / shape_changed / moved / resized / style_changed / added / removed`.
-- GUI Electron drag-drop, 4 tab: **Tổng quan / Dữ liệu / Hình ảnh / 吹き出し**.
+- So sánh **khung chú thích (callout / speech bubble)** — parse trực tiếp `xl/drawings/*.xml` (vì exceljs không hỗ trợ shapes), trích xuất prstGeom + text + anchor + size + fill, match bằng composite distance (text Levenshtein 50% + geom 20% + position 20% + fill 10%) → status: `identical / text_changed / shape_changed / moved / resized / style_changed / added / removed`.
+- GUI Electron drag-drop, 4 tab: **Tổng quan / Dữ liệu / Hình ảnh / Khung chú thích**.
 - Xuất báo cáo **Excel** (tô màu diff, thumbnail ảnh, sheet Shapes) và **HTML**.
 - CLI cho automation/CI: `--no-images`, `--no-shapes`, `--format`.
 - Đóng gói thành **.app + .dmg** (macOS x64 + arm64), **.exe NSIS installer + portable** (Windows), **AppImage + .deb** (Linux).
@@ -42,12 +42,12 @@ excel-diff-tool-node/
 ├── src/
 │   ├── excelDiff.js      # diff cell/sheet/formula/format
 │   ├── imageDiff.js      # multi-hash + greedy global match (ảnh nhúng)
-│   ├── shapeDiff.js      # parse drawing XML + diff 吹き出し/callout
+│   ├── shapeDiff.js      # parse drawing XML + diff khung chú thích / callout
 │   ├── report.js         # xuất Excel + HTML
 │   └── cli.js            # CLI entry
 ├── scripts/
 │   ├── makeDemoFiles.js  # tạo file demo có ảnh nhúng
-│   └── makeDemoShapes.js # tạo file demo có 吹き出し (callout shapes)
+│   └── makeDemoShapes.js # tạo file demo có khung chú thích (callout shapes)
 ├── tests/
 │   └── smoke.test.mjs    # vitest (ESM)
 ├── assets/               # icon, etc.
@@ -61,7 +61,7 @@ Usage:
         [--out report.xlsx] [--html report.html] [--no-images] [--format]
 ```
 
-## 💬 Shape diff (吹き出し / Callout)
+## 💬 So sánh khung chú thích (Callout / Speech bubble)
 exceljs **không hỗ trợ shapes**, nên `src/shapeDiff.js` parse trực tiếp XML drawing trong xlsx (xlsx = ZIP):
 1. Mở zip qua `jszip`, đọc `xl/workbook.xml` + rels → resolve tên sheet → drawing path.
 2. Parse `xl/drawings/drawing*.xml` qua `sax` streaming, trích xuất từng `<xdr:sp>`:

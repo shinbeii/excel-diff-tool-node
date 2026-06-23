@@ -38,7 +38,7 @@ Flags:
   --out PATH      Xuất báo cáo Excel (mặc định: comparison_report_<ts>.xlsx)
   --html PATH     Xuất thêm HTML report
   --no-images     Bỏ qua so sánh ảnh nhúng
-  --no-shapes     Bỏ qua so sánh shapes/吹き出し (callout)
+  --no-shapes     Bỏ qua so sánh khung chú thích (callout)
   --format        Bật so sánh định dạng (font/màu/border)
 `);
 }

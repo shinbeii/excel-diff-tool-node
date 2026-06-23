@@ -86,7 +86,7 @@ ipcMain.handle('compare:run', async (event, args) => {
   }
   let shapeResults = {};
   if (compareShapes) {
-    send('progress', { pct: 80, msg: 'Parse drawing XML + diff shapes (吹き出し)...' });
+    send('progress', { pct: 80, msg: 'Parse drawing XML + diff khung chú thích...' });
     shapeResults = await diffShapes(files);
   }
   send('progress', { pct: 100, msg: 'Hoàn tất.' });

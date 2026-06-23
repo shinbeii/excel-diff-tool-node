@@ -1,5 +1,5 @@
 /**
- * src/shapeDiff.js — So sánh shapes (吹き出し / callout / speech bubble) trong Excel.
+ * src/shapeDiff.js — So sánh khung chú thích (callout / speech bubble) trong Excel.
  *
  * exceljs KHÔNG hỗ trợ shapes, nên ta parse trực tiếp XML drawing trong xlsx (zip):
  *   - xl/workbook.xml + xl/_rels/workbook.xml.rels  -> sheet name -> sheet path
@@ -24,7 +24,7 @@ const fs = require('fs');
 const sax = require('sax');
 const JSZip = require('jszip');
 
-// Các prstGeom kiểu callout/吹き出し (Excel "Callout" group + speech bubble Smart Art)
+// Các prstGeom kiểu callout / khung chú thích (Excel "Callout" group + speech bubble Smart Art)
 const CALLOUT_PRSTS = new Set([
   'wedgeRectCallout', 'wedgeRoundRectCallout', 'wedgeEllipseCallout',
   'cloudCallout',
