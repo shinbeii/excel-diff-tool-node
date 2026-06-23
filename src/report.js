@@ -24,6 +24,23 @@ const FILL = {
   style_changed:  'FFE7E6E6',
 };
 
+// Map status (key tiếng Anh) → nhãn hiển thị tiếng Việt cho engineer VN.
+const STATUS_VI = {
+  added:          'Thêm mới',
+  removed:        'Đã xoá',
+  modified:       'Đã sửa',
+  unchanged:      'Không đổi',
+  identical:      'Giống nhau',
+  near_identical: 'Gần giống',
+  similar:        'Tương tự',
+  resized:        'Đổi kích thước',
+  moved:          'Di chuyển',
+  text_changed:   'Đổi nội dung',
+  shape_changed:  'Đổi hình dạng',
+  style_changed:  'Đổi định dạng',
+};
+const _vi = (s) => STATUS_VI[s] || s;
+
 function _safeSheetName(name) {
   const bad = /[\[\]:*?/\\]/g;
   return name.replace(bad, '_').slice(0, 28);
@@ -58,14 +75,14 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
 
   // ----- Summary -----
   const ws = wb.addWorksheet('Summary');
-  ws.getCell('A1').value = 'Excel Diff Report';
+  ws.getCell('A1').value = 'Báo cáo so sánh Excel';
   ws.getCell('A1').font = { bold: true, size: 14 };
-  ws.getCell('A3').value = 'Generated at';
+  ws.getCell('A3').value = 'Thời gian tạo';
   ws.getCell('B3').value = new Date().toISOString().slice(0, 19);
-  ws.getCell('A4').value = 'Files';
+  ws.getCell('A4').value = 'Danh sách file';
   diff.files.forEach((p, i) => { ws.getCell(4, 2 + i).value = p; });
 
-  const headers = ['Sheet', 'Added', 'Removed', 'Modified', 'Unchanged'];
+  const headers = ['Trang tính', 'Thêm mới', 'Đã xoá', 'Đã sửa', 'Không đổi'];
   headers.forEach((h, i) => {
     const c = ws.getCell(6, i + 1); c.value = h; c.font = { bold: true };
   });
@@ -85,16 +102,16 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
     if (!sd.cells.length) continue;
     const s = wb.addWorksheet(`diff_${_safeSheetName(sd.name)}`);
     const nFiles = diff.files.length;
-    const cols = ['Cell', 'Status'];
+    const cols = ['Ô', 'Trạng thái'];
     for (let i = 0; i < nFiles; i++) cols.push(`File ${i + 1}`);
-    cols.push('Formula(s)');
+    cols.push('Công thức');
     cols.forEach((h, i) => {
       const c = s.getCell(1, i + 1); c.value = h; c.font = { bold: true };
     });
     sd.cells.forEach((cd, idx) => {
       const ri = idx + 2;
       s.getCell(ri, 1).value = cd.coord;
-      s.getCell(ri, 2).value = cd.status;
+      s.getCell(ri, 2).value = _vi(cd.status);
       cd.values.forEach((v, j) => {
         s.getCell(ri, 3 + j).value = v == null ? '' : String(v);
       });
@@ -109,10 +126,10 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
     s.views = [{ state: 'frozen', ySplit: 1 }];
   }
 
-  // ----- Images sheet -----
+  // ----- Sheet "Hình ảnh" -----
   if (imageResults && Object.keys(imageResults).length > 0) {
-    const ims = wb.addWorksheet('Images');
-    const head = ['Sheet', 'Status', 'Score', 'Anchors', 'Sizes', 'pHash', 'Thumbnail (file1)'];
+    const ims = wb.addWorksheet('Hình ảnh');
+    const head = ['Trang tính', 'Trạng thái', 'Độ khớp', 'Vị trí', 'Kích thước', 'pHash', 'Ảnh thu nhỏ (file 1)'];
     head.forEach((h, i) => {
       const c = ims.getCell(1, i + 1); c.value = h; c.font = { bold: true };
     });
@@ -120,7 +137,7 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
     for (const [sname, res] of Object.entries(imageResults)) {
       for (const e of res.entries) {
         ims.getCell(row, 1).value = sname;
-        ims.getCell(row, 2).value = e.status;
+        ims.getCell(row, 2).value = _vi(e.status);
         ims.getCell(row, 3).value = `${e.score || 0}%`;
         ims.getCell(row, 4).value = e.items.map(it => it ? it.anchor : '-').join(' / ');
         ims.getCell(row, 5).value = e.items.map(it => it ? `${it.width}x${it.height}` : '-').join(' / ');
@@ -153,8 +170,8 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
 
   // ----- Sheet "Khung chú thích" (callout) -----
   if (shapeResults && Object.keys(shapeResults).length > 0) {
-    const shs = wb.addWorksheet('Shapes');
-    const head = ['Sheet', 'Status', 'Score', 'Type', 'Anchors', 'Sizes (px)', 'Fill', 'Text (file1)', 'Text (file2)', 'Text (file3)'];
+    const shs = wb.addWorksheet('Khung chú thích');
+    const head = ['Trang tính', 'Trạng thái', 'Độ khớp', 'Loại', 'Vị trí', 'Kích thước (px)', 'Màu nền', 'Nội dung (file 1)', 'Nội dung (file 2)', 'Nội dung (file 3)'];
     const nFiles = diff.files.length;
     const headers = head.slice(0, 7 + nFiles);
     headers.forEach((h, i) => {
@@ -164,7 +181,7 @@ async function exportExcelReport(diff, imageResults, outPath, extra = {}) {
     for (const [sname, res] of Object.entries(shapeResults)) {
       for (const e of res.entries) {
         shs.getCell(row, 1).value = sname;
-        shs.getCell(row, 2).value = e.status;
+        shs.getCell(row, 2).value = _vi(e.status);
         shs.getCell(row, 3).value = `${e.score || 0}%`;
         shs.getCell(row, 4).value = e.items.map(it => it ? it.prstGeom : '-').join(' / ');
         shs.getCell(row, 5).value = e.items.map(it => it ? it.anchor : '-').join(' / ');
@@ -206,11 +223,11 @@ async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
     '.style_changed{background:#E7E6E6}.identical{background:#FFFFFF}',
     'h1{margin-top:0}h2{border-bottom:2px solid #333;padding-bottom:4px}',
     'code{background:#f3f3f3;padding:1px 4px;border-radius:3px}</style>',
-    '</head><body>', '<h1>Excel Diff Report</h1>',
-    `<p>Generated: ${_escapeHtml(new Date().toISOString().slice(0, 19))}</p>`,
-    '<p>Files: ' + diff.files.map(p => `<code>${_escapeHtml(p)}</code>`).join(' &nbsp;vs&nbsp; ') + '</p>',
-    '<h2>Summary</h2><table>',
-    '<tr><th>Sheet</th><th>Added</th><th>Removed</th><th>Modified</th><th>Unchanged</th></tr>',
+    '</head><body>', '<h1>Báo cáo so sánh Excel</h1>',
+    `<p>Thời gian tạo: ${_escapeHtml(new Date().toISOString().slice(0, 19))}</p>`,
+    '<p>Danh sách file: ' + diff.files.map(p => `<code>${_escapeHtml(p)}</code>`).join(' &nbsp;vs&nbsp; ') + '</p>',
+    '<h2>Tổng quan</h2><table>',
+    '<tr><th>Trang tính</th><th>Thêm mới</th><th>Đã xoá</th><th>Đã sửa</th><th>Không đổi</th></tr>',
   ];
   for (const sd of diff.sheets) {
     parts.push(
@@ -225,11 +242,11 @@ async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
 
   for (const sd of diff.sheets) {
     if (!sd.cells.length) continue;
-    parts.push(`<h2>Sheet: ${_escapeHtml(sd.name)}</h2><table><tr><th>Cell</th><th>Status</th>`);
+    parts.push(`<h2>Trang tính: ${_escapeHtml(sd.name)}</h2><table><tr><th>Ô</th><th>Trạng thái</th>`);
     for (let i = 0; i < diff.files.length; i++) parts.push(`<th>File ${i + 1}</th>`);
-    parts.push('<th>Formula</th></tr>');
+    parts.push('<th>Công thức</th></tr>');
     for (const cd of sd.cells) {
-      parts.push(`<tr class="${cd.status}"><td>${cd.coord}</td><td>${cd.status}</td>`);
+      parts.push(`<tr class="${cd.status}"><td>${cd.coord}</td><td>${_vi(cd.status)}</td>`);
       for (const v of cd.values) parts.push(`<td>${_escapeHtml(v == null ? '' : String(v))}</td>`);
       parts.push(`<td>${_escapeHtml(cd.formulas.map(f => f || '').join(' | '))}</td></tr>`);
     }
@@ -237,14 +254,14 @@ async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
   }
 
   if (imageResults && Object.keys(imageResults).length > 0) {
-    parts.push('<h2>Images</h2><table>',
-      '<tr><th>Sheet</th><th>Status</th><th>Score</th><th>Anchors</th><th>Sizes</th><th>pHash</th></tr>');
+    parts.push('<h2>Hình ảnh</h2><table>',
+      '<tr><th>Trang tính</th><th>Trạng thái</th><th>Độ khớp</th><th>Vị trí</th><th>Kích thước</th><th>pHash</th></tr>');
     for (const [sname, res] of Object.entries(imageResults)) {
       for (const e of res.entries) {
         parts.push(
           `<tr class="${e.status}">` +
           `<td>${_escapeHtml(sname)}</td>` +
-          `<td>${e.status}</td>` +
+          `<td>${_vi(e.status)}</td>` +
           `<td>${e.score || 0}%</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? it.anchor : '-').join(' / '))}</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? `${it.width}x${it.height}` : '-').join(' / '))}</td>` +
@@ -258,13 +275,13 @@ async function exportHtmlReport(diff, imageResults, outPath, extra = {}) {
 
   if (shapeResults && Object.keys(shapeResults).length > 0) {
     parts.push('<h2>Khung chú thích (callout)</h2><table>',
-      '<tr><th>Sheet</th><th>Status</th><th>Score</th><th>Type</th><th>Anchors</th><th>Sizes (px)</th><th>Fill</th><th>Text</th></tr>');
+      '<tr><th>Trang tính</th><th>Trạng thái</th><th>Độ khớp</th><th>Loại</th><th>Vị trí</th><th>Kích thước (px)</th><th>Màu nền</th><th>Nội dung</th></tr>');
     for (const [sname, res] of Object.entries(shapeResults)) {
       for (const e of res.entries) {
         parts.push(
           `<tr class="${e.status}">` +
           `<td>${_escapeHtml(sname)}</td>` +
-          `<td>${e.status}</td>` +
+          `<td>${_vi(e.status)}</td>` +
           `<td>${e.score || 0}%</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? it.prstGeom : '-').join(' / '))}</td>` +
           `<td>${_escapeHtml(e.items.map(it => it ? it.anchor : '-').join(' / '))}</td>` +

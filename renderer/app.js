@@ -16,6 +16,23 @@ const state = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+// Map status (key tiếng Anh dùng làm CSS class) → nhãn hiển thị tiếng Việt cho engineer VN.
+const STATUS_VI = {
+  added:          'Thêm mới',
+  removed:        'Đã xoá',
+  modified:       'Đã sửa',
+  unchanged:      'Không đổi',
+  identical:      'Giống nhau',
+  near_identical: 'Gần giống',
+  similar:        'Tương tự',
+  resized:        'Đổi kích thước',
+  moved:          'Di chuyển',
+  text_changed:   'Đổi nội dung',
+  shape_changed:  'Đổi hình dạng',
+  style_changed:  'Đổi định dạng',
+};
+const viStatus = (s) => STATUS_VI[s] || s;
+
 function renderDropzones() {
   const root = $('#dropzones');
   root.innerHTML = '';
@@ -163,30 +180,30 @@ function renderOverview() {
   let html = '<div class="summary-grid">';
   html += `<div class="summary-card">
     <h3>📈 Tổng quan</h3>
-    <div class="row kv-added"><span>Added</span><span class="v">${d.summary.added}</span></div>
-    <div class="row kv-removed"><span>Removed</span><span class="v">${d.summary.removed}</span></div>
-    <div class="row kv-modified"><span>Modified</span><span class="v">${d.summary.modified}</span></div>
-    <div class="row"><span>Unchanged</span><span class="v">${d.summary.unchanged}</span></div>
+    <div class="row kv-added"><span>Thêm mới</span><span class="v">${d.summary.added}</span></div>
+    <div class="row kv-removed"><span>Đã xoá</span><span class="v">${d.summary.removed}</span></div>
+    <div class="row kv-modified"><span>Đã sửa</span><span class="v">${d.summary.modified}</span></div>
+    <div class="row"><span>Không đổi</span><span class="v">${d.summary.unchanged}</span></div>
   </div>`;
   for (const sd of d.sheets) {
     html += `<div class="summary-card">
       <h3>📄 ${sd.name}</h3>
-      <div class="row kv-added"><span>Added</span><span class="v">${sd.summary.added}</span></div>
-      <div class="row kv-removed"><span>Removed</span><span class="v">${sd.summary.removed}</span></div>
-      <div class="row kv-modified"><span>Modified</span><span class="v">${sd.summary.modified}</span></div>
+      <div class="row kv-added"><span>Thêm mới</span><span class="v">${sd.summary.added}</span></div>
+      <div class="row kv-removed"><span>Đã xoá</span><span class="v">${sd.summary.removed}</span></div>
+      <div class="row kv-modified"><span>Đã sửa</span><span class="v">${sd.summary.modified}</span></div>
     </div>`;
   }
   if (state.imageResults) {
     for (const [s, r] of Object.entries(state.imageResults)) {
       html += `<div class="summary-card">
         <h3>🖼 ${s}</h3>
-        <div class="row"><span>identical</span><span class="v">${r.summary.identical}</span></div>
-        <div class="row kv-similar"><span>near_identical</span><span class="v">${r.summary.near_identical}</span></div>
-        <div class="row kv-similar"><span>similar</span><span class="v">${r.summary.similar}</span></div>
-        <div class="row kv-resized"><span>resized</span><span class="v">${r.summary.resized}</span></div>
-        <div class="row kv-moved"><span>moved</span><span class="v">${r.summary.moved}</span></div>
-        <div class="row kv-added"><span>added</span><span class="v">${r.summary.added}</span></div>
-        <div class="row kv-removed"><span>removed</span><span class="v">${r.summary.removed}</span></div>
+        <div class="row"><span>Giống nhau</span><span class="v">${r.summary.identical}</span></div>
+        <div class="row kv-similar"><span>Gần giống</span><span class="v">${r.summary.near_identical}</span></div>
+        <div class="row kv-similar"><span>Tương tự</span><span class="v">${r.summary.similar}</span></div>
+        <div class="row kv-resized"><span>Đổi kích thước</span><span class="v">${r.summary.resized}</span></div>
+        <div class="row kv-moved"><span>Di chuyển</span><span class="v">${r.summary.moved}</span></div>
+        <div class="row kv-added"><span>Thêm mới</span><span class="v">${r.summary.added}</span></div>
+        <div class="row kv-removed"><span>Đã xoá</span><span class="v">${r.summary.removed}</span></div>
       </div>`;
     }
   }
@@ -194,13 +211,13 @@ function renderOverview() {
     for (const [s, r] of Object.entries(state.shapeResults)) {
       html += `<div class="summary-card">
         <h3>💬 ${s} <small style="color:#888;font-weight:400">(khung chú thích: ${r.summary.callouts || 0})</small></h3>
-        <div class="row"><span>identical</span><span class="v">${r.summary.identical}</span></div>
-        <div class="row kv-modified"><span>text_changed</span><span class="v">${r.summary.text_changed}</span></div>
-        <div class="row kv-moved"><span>moved</span><span class="v">${r.summary.moved}</span></div>
-        <div class="row kv-resized"><span>resized / shape_changed</span><span class="v">${r.summary.resized + r.summary.shape_changed}</span></div>
-        <div class="row"><span>style_changed</span><span class="v">${r.summary.style_changed}</span></div>
-        <div class="row kv-added"><span>added</span><span class="v">${r.summary.added}</span></div>
-        <div class="row kv-removed"><span>removed</span><span class="v">${r.summary.removed}</span></div>
+        <div class="row"><span>Giống nhau</span><span class="v">${r.summary.identical}</span></div>
+        <div class="row kv-modified"><span>Đổi nội dung</span><span class="v">${r.summary.text_changed}</span></div>
+        <div class="row kv-moved"><span>Di chuyển</span><span class="v">${r.summary.moved}</span></div>
+        <div class="row kv-resized"><span>Đổi kích thước / hình dạng</span><span class="v">${r.summary.resized + r.summary.shape_changed}</span></div>
+        <div class="row"><span>Đổi định dạng</span><span class="v">${r.summary.style_changed}</span></div>
+        <div class="row kv-added"><span>Thêm mới</span><span class="v">${r.summary.added}</span></div>
+        <div class="row kv-removed"><span>Đã xoá</span><span class="v">${r.summary.removed}</span></div>
       </div>`;
     }
   }
@@ -219,13 +236,13 @@ function renderDataTable() {
   }
   const filter = ($('#filterData').value || '').toLowerCase();
   const nFiles = state.diff.files.length;
-  let html = '<table class="diff"><thead><tr><th>Cell</th><th>Status</th>';
+  let html = '<table class="diff"><thead><tr><th>Ô</th><th>Trạng thái</th>';
   for (let i = 0; i < nFiles; i++) html += `<th>File ${i + 1}</th>`;
-  html += '<th>Formula</th></tr></thead><tbody>';
+  html += '<th>Công thức</th></tr></thead><tbody>';
   for (const cd of sd.cells) {
     const text = (cd.coord + ' ' + cd.status + ' ' + (cd.values || []).join(' ')).toLowerCase();
     if (filter && !text.includes(filter)) continue;
-    html += `<tr class="${cd.status}"><td>${cd.coord}</td><td>${cd.status}</td>`;
+    html += `<tr class="${cd.status}"><td>${cd.coord}</td><td><span class="badge b-${cd.status}">${viStatus(cd.status)}</span></td>`;
     for (const v of cd.values) html += `<td>${esc(v)}</td>`;
     html += `<td>${esc(cd.formulas.map(f => f || '').join(' | '))}</td></tr>`;
   }
@@ -236,28 +253,28 @@ function renderDataTable() {
 function renderImages() {
   const root = $('#imagesWrap');
   if (!state.imageResults || Object.keys(state.imageResults).length === 0) {
-    root.innerHTML = '<div class="placeholder">Không có ảnh được so sánh.</div>'; return;
+    root.innerHTML = '<div class="placeholder">Chưa có ảnh để so sánh.</div>'; return;
   }
   let html = '';
   for (const [s, r] of Object.entries(state.imageResults)) {
     if (!r.entries.length) continue;
-    html += `<h2 style="font-size:14px;color:#fff;margin:8px 4px">📄 Sheet: ${s}</h2><div class="image-grid">`;
+    html += `<h2 style="font-size:14px;color:#fff;margin:8px 4px">📄 Trang tính: ${s}</h2><div class="image-grid">`;
     for (const e of r.entries) {
       html += `<div class="image-card">
-        <div><span class="badge b-${e.status}">${e.status}</span> <span class="score">${e.score}%</span></div>
+        <div><span class="badge b-${e.status}">${viStatus(e.status)}</span> <span class="score">${e.score}%</span></div>
         <div class="imgs">`;
       for (const it of e.items) {
         if (it && it.thumb) html += `<img src="${it.thumb}" title="${it.anchor} ${it.width}x${it.height}">`;
         else html += `<div style="width:120px;height:90px;border:1px dashed #555;display:flex;align-items:center;justify-content:center;color:#777;font-size:11px">—</div>`;
       }
-      html += `</div><div class="meta">distance: ${e.distance} · anchors: ${e.items.map(it => it ? it.anchor : '-').join(' / ')}</div></div>`;
+      html += `</div><div class="meta">khoảng cách: ${e.distance} · vị trí: ${e.items.map(it => it ? it.anchor : '-').join(' / ')}</div></div>`;
     }
     html += '</div>';
   }
   root.innerHTML = html || '<div class="placeholder">Không có ảnh khác biệt.</div>';
 }
 
-function renderShapes() {
+function renderShapes() {  // Tab "Khung chú thích"
   const root = $('#shapesWrap');
   if (!state.shapeResults || Object.keys(state.shapeResults).length === 0) {
     root.innerHTML = '<div class="placeholder">Không có khung chú thích (callout) trong file.</div>'; return;
@@ -265,8 +282,8 @@ function renderShapes() {
   let html = '';
   for (const [s, r] of Object.entries(state.shapeResults)) {
     if (!r.entries.length) continue;
-    html += `<h2 style="font-size:14px;color:#fff;margin:8px 4px">📄 Sheet: ${s} <small style="color:#888;font-weight:400">— callouts: ${r.summary.callouts || 0}</small></h2>`;
-    html += '<table class="diff"><thead><tr><th>Status</th><th>Score</th><th>Type</th><th>Anchor</th><th>Size (px)</th><th>Fill</th><th>Text</th></tr></thead><tbody>';
+    html += `<h2 style="font-size:14px;color:#fff;margin:8px 4px">📄 Trang tính: ${s} <small style="color:#888;font-weight:400">— số khung chú thích: ${r.summary.callouts || 0}</small></h2>`;
+    html += '<table class="diff"><thead><tr><th>Trạng thái</th><th>Độ khớp</th><th>Loại</th><th>Vị trí</th><th>Kích thước (px)</th><th>Màu nền</th><th>Nội dung</th></tr></thead><tbody>';
     for (const e of r.entries) {
       const cls = e.status;
       const types = e.items.map(it => it ? it.prstGeom : '-').join(' / ');
@@ -274,7 +291,7 @@ function renderShapes() {
       const sizes = e.items.map(it => it ? `${it.widthPx}×${it.heightPx}` : '-').join(' / ');
       const fills = e.items.map(it => it ? renderFillSwatch(it.fill) : '-').join(' ');
       const texts = e.items.map(it => it ? `<div>${esc(it.text || '')}</div>` : '<div style="color:#666">—</div>').join('<div style="color:#888;text-align:center">↓</div>');
-      html += `<tr class="${cls}"><td><span class="badge b-${cls}">${cls}</span></td><td class="score">${e.score}%</td><td>${esc(types)}</td><td>${esc(anchors)}</td><td>${esc(sizes)}</td><td>${fills}</td><td style="white-space:normal">${texts}</td></tr>`;
+      html += `<tr class="${cls}"><td><span class="badge b-${cls}">${viStatus(cls)}</span></td><td class="score">${e.score}%</td><td>${esc(types)}</td><td>${esc(anchors)}</td><td>${esc(sizes)}</td><td>${fills}</td><td style="white-space:normal">${texts}</td></tr>`;
     }
     html += '</tbody></table>';
   }

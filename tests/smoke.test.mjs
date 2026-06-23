@@ -90,8 +90,8 @@ describe('excel-diff-tool smoke', () => {
     expect(fs.existsSync(xlsx)).toBe(true);
     expect(fs.existsSync(html)).toBe(true);
     const htmlContent = fs.readFileSync(html, 'utf-8');
-    expect(htmlContent).toContain('吹き出し');
-    expect(htmlContent).toContain('text_changed');
+    expect(htmlContent).toContain('Khung chú thích');
+    expect(htmlContent).toContain('Đổi nội dung');
   }, 60000);
 
   it('xuất báo cáo Excel + HTML', async () => {
